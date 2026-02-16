@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
 Solve the team round-robin tournament for n=34, m=17.
-Uses Google OR-Tools CP-SAT solver.
-Outputs solution_34.txt on success.
+Uses CP-SAT with an efficient formulation:
+- IntVar for pairings (n^2 vars) + inverse permutations
+- Element constraints for B-balance (avoids n^3 booleans)
+Total ~4n^2 ≈ 4600 variables instead of ~2n^3 ≈ 78000.
 """
 from ortools.sat.python import cp_model
 import time
@@ -12,72 +14,80 @@ n = 34
 m = 17
 
 def solve():
-    print(f"Setting up CP-SAT model for n={n}, m={m}...", flush=True)
+    print(f"=== Efficient CP-SAT solver for n={n}, m={m} ===", flush=True)
     t0 = time.time()
     
     model = cp_model.CpModel()
     
-    # y[r][i][j] = 1 if A_i plays B_j in round r
-    print("  Creating y variables...", flush=True)
-    y = [[[model.NewBoolVar(f'y_{r}_{i}_{j}') for j in range(n)] 
-          for i in range(n)] for r in range(n)]
-    print(f"  y: {n*n*n} vars ({time.time()-t0:.1f}s)", flush=True)
+    # L[r][i]: which B_j does A_i face in round r
+    print("  Creating L (pairing) IntVars...", flush=True)
+    L = [[model.NewIntVar(0, n-1, f'L_{r}_{i}') for i in range(n)] for r in range(n)]
     
-    # f[r][i] = 1 if A_i goes first in round r
+    # P[r][j]: which A_i does B_j face in round r (inverse of L[r])
+    print("  Creating P (inverse) IntVars...", flush=True)
+    P = [[model.NewIntVar(0, n-1, f'P_{r}_{j}') for j in range(n)] for r in range(n)]
+    
+    # f[r][i]: 1 if A_i goes first in round r
+    print("  Creating f (color) BoolVars...", flush=True)
     f = [[model.NewBoolVar(f'f_{r}_{i}') for i in range(n)] for r in range(n)]
-    print(f"  f: {n*n} vars ({time.time()-t0:.1f}s)", flush=True)
     
-    # w[r][i][j] = y[r][i][j] AND f[r][i]
-    print("  Creating w variables...", flush=True)
-    w = [[[model.NewBoolVar(f'w_{r}_{i}_{j}') for j in range(n)]
-          for i in range(n)] for r in range(n)]
-    print(f"  w: {n*n*n} vars ({time.time()-t0:.1f}s)", flush=True)
+    # g[r][j]: 1 if B_j goes second in round r (= f[r][P[r][j]])
+    print("  Creating g (B-second) BoolVars...", flush=True)
+    g = [[model.NewBoolVar(f'g_{r}_{j}') for j in range(n)] for r in range(n)]
     
-    # Linking w = y AND f
-    print("  Adding w=y&f constraints...", flush=True)
-    for r in range(n):
-        for i in range(n):
-            for j in range(n):
-                model.Add(w[r][i][j] <= y[r][i][j])
-                model.Add(w[r][i][j] <= f[r][i])
-                model.Add(w[r][i][j] >= y[r][i][j] + f[r][i] - 1)
-    print(f"  w linking done ({time.time()-t0:.1f}s)", flush=True)
+    print(f"  Variables created: {4*n*n} total ({time.time()-t0:.1f}s)", flush=True)
     
-    # Latin square constraints
-    print("  Adding Latin square constraints...", flush=True)
+    # L[r] is a permutation, P[r] is its inverse
+    print("  Adding inverse permutation constraints...", flush=True)
     for r in range(n):
-        for i in range(n):
-            model.Add(sum(y[r][i][j] for j in range(n)) == 1)
-    for r in range(n):
-        for j in range(n):
-            model.Add(sum(y[r][i][j] for i in range(n)) == 1)
+        model.AddInverse(L[r], P[r])
+    print(f"  Inverse done ({time.time()-t0:.1f}s)", flush=True)
+    
+    # Each A_i faces each B_j exactly once (column AllDifferent)
+    print("  Adding column AllDifferent...", flush=True)
     for i in range(n):
-        for j in range(n):
-            model.Add(sum(y[r][i][j] for r in range(n)) == 1)
-    print(f"  Latin square done ({time.time()-t0:.1f}s)", flush=True)
+        model.AddAllDifferent([L[r][i] for r in range(n)])
+    print(f"  Col AllDiff done ({time.time()-t0:.1f}s)", flush=True)
     
-    # Color balance constraints
+    # Element constraint: g[r][j] = f[r][ P[r][j] ]
+    # B_j goes second when the A-player facing B_j goes first
+    print("  Adding element constraints for g...", flush=True)
+    for r in range(n):
+        for j in range(n):
+            model.AddElement(P[r][j], f[r], g[r][j])
+    print(f"  Element done ({time.time()-t0:.1f}s)", flush=True)
+    
+    # Row sum: each round has m A-players going first
     print("  Adding balance constraints...", flush=True)
     for r in range(n):
         model.Add(sum(f[r][i] for i in range(n)) == m)
+    
+    # Column sum: each A_i goes first m times
     for i in range(n):
         model.Add(sum(f[r][i] for r in range(n)) == m)
+    
+    # B-balance: each B_j goes second m times
     for j in range(n):
-        model.Add(sum(w[r][i][j] for r in range(n) for i in range(n)) == m)
+        model.Add(sum(g[r][j] for r in range(n)) == m)
+    
     print(f"  Balance done ({time.time()-t0:.1f}s)", flush=True)
     
     # Symmetry breaking
     print("  Adding symmetry breaking...", flush=True)
+    # Round 0: identity pairing
     for i in range(n):
-        model.Add(y[0][i][i] == 1)
+        model.Add(L[0][i] == i)
+    # Round 0: first m A-players go first
     for i in range(m):
         model.Add(f[0][i] == 1)
     for i in range(m, n):
         model.Add(f[0][i] == 0)
     
+    # Round 1: A_0 plays B_1 (break rotational symmetry)
+    model.Add(L[1][0] == 1)
+    
     setup_time = time.time() - t0
-    print(f"\nModel setup complete: {setup_time:.1f}s", flush=True)
-    print(f"Total variables: ~{2*n*n*n + n*n}", flush=True)
+    print(f"\nModel setup: {setup_time:.1f}s", flush=True)
     
     # Solve
     solver = cp_model.CpSolver()
@@ -85,24 +95,17 @@ def solve():
     solver.parameters.num_search_workers = 8
     solver.parameters.log_search_progress = True
     
-    print("\nSolving...", flush=True)
+    # Search strategy hints
+    print("Solving...", flush=True)
     status = solver.Solve(model)
     
     print(f"\nStatus: {solver.StatusName(status)}", flush=True)
     print(f"Wall time: {solver.WallTime():.1f}s", flush=True)
     
-    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        L = [[0]*n for _ in range(n)]
-        F = [[0]*n for _ in range(n)]
-        
-        for r in range(n):
-            for i in range(n):
-                F[r][i] = solver.Value(f[r][i])
-                for j in range(n):
-                    if solver.Value(y[r][i][j]) == 1:
-                        L[r][i] = j
-        
-        return L, F, solver.WallTime()
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        Lv = [[solver.Value(L[r][i]) for i in range(n)] for r in range(n)]
+        Fv = [[solver.Value(f[r][i]) for i in range(n)] for r in range(n)]
+        return Lv, Fv, solver.WallTime()
     
     return None, None, solver.WallTime()
 
@@ -118,7 +121,7 @@ def verify(L, F):
             errors.append(f"A{i+1}: col not permutation")
     for r in range(n):
         if sum(F[r]) != m:
-            errors.append(f"Round {r+1}: row sum={sum(F[r])}")
+            errors.append(f"Round {r+1}: A-first={sum(F[r])}")
     for i in range(n):
         s = sum(F[r][i] for r in range(n))
         if s != m:
@@ -137,8 +140,9 @@ def verify(L, F):
 def write_solution(L, F, solve_time, filename="solution_34.txt"):
     with open(filename, 'w') as out:
         out.write(f"# Team Round-Robin Tournament Solution for n={n}, m={m}\n")
+        out.write(f"# 全队循环赛编排方案 n={n}, m={m}\n")
         out.write(f"# Solved by CP-SAT in {solve_time:.1f}s\n")
-        out.write(f"# Format: player on LEFT of '-' goes first\n\n")
+        out.write("# Format: player LEFT of '-' goes first / \"-\"左边的队员执先\n\n")
         
         for r in range(n):
             matches = []
@@ -150,18 +154,17 @@ def write_solution(L, F, solve_time, filename="solution_34.txt"):
                     matches.append(f"B{j+1}-A{i+1}")
             out.write(f"第{r+1}轮 {' '.join(matches)}\n")
         
-        out.write(f"\n# Verification\n")
+        out.write(f"\n# Verification 验证\n")
         errors = verify(L, F)
         if errors:
             out.write(f"# ERRORS: {len(errors)}\n")
             for e in errors:
                 out.write(f"#   {e}\n")
         else:
-            out.write(f"# ALL CHECKS PASSED\n")
-            out.write(f"# - All {n*n} pairs appear exactly once\n")
-            out.write(f"# - Each round: {m} A-first, {m} B-first\n")
-            out.write(f"# - Each A-player: first={m}, second={m}\n")
-            out.write(f"# - Each B-player: first={m}, second={m}\n")
+            out.write(f"# ALL CHECKS PASSED 全部检查通过\n")
+            out.write(f"# - All {n*n} pairs exactly once / 全部{n*n}对各一次\n")
+            out.write(f"# - Each round: {m} A-first, {m} B-first / 每轮{m}名A执先{m}名B执先\n")
+            out.write(f"# - Each player: first={m}, second={m} / 每位队员执先{m}次执后{m}次\n")
     
     print(f"\nSolution written to {filename}", flush=True)
 
@@ -178,5 +181,5 @@ if __name__ == '__main__':
             print(f"\nALL CHECKS PASSED!", flush=True)
         write_solution(L, F, solve_time)
     else:
-        print("\nNo solution found!", flush=True)
+        print("\nNo solution found within time limit!", flush=True)
         sys.exit(1)
