@@ -1,0 +1,194 @@
+在线搜索结果：平衡的队际循环赛编排问题
+============================================================
+
+搜索摘要
+--------
+
+问题描述：给定A、B两支队伍，每队各有 n=2m 名队员，需编排一个 n 轮的赛程，满足：
+1. 每位A队队员与每位B队队员恰好交手一次
+2. 每轮为两队之间的完美匹配（每轮每人对手不同）
+3. 每轮中，每支队伍恰好有 m 人执先、m 人执后
+4. 所有轮次结束后，每位队员的先手次数和后手次数均为 m
+
+目标：求 n=10（m=5）时的一个解。
+
+============================================================
+
+结论：未在网上找到直接解答
+============================================================
+
+经过对 ArXiv、MathOverflow、Math StackExchange、组合数学期刊、中文数学/围棋论坛、以及赛事编排资源的广泛搜索，未找到针对本问题（n=10）的确切在线解答。该问题属于一个较为小众的变体，将多个已被充分研究的约束条件组合在一起，在现有文献中未被明确处理过。
+
+但是，多个密切相关的数学框架和论文提供了可用于构造或求解的思路和方法，详见下文。
+
+============================================================
+
+密切相关的数学概念
+============================================================
+
+1. 平衡锦标赛设计（BTD, Balanced Tournament Design）
+------------------------------------------------------------
+
+相关度：高 —— BTD 是与本问题最接近的标准组合设计。
+
+BTD(n) 是一个定义在 2n 个元素上的 n×(2n-1) 阵列，其中每个单元格包含一对元素，每对恰出现一次，每个元素在每列中恰出现一次，且每个元素在每行中至多出现两次。BTD 对所有 n（除 n=2 外）均存在。
+
+论文：E. R. Lamken, S. A. Vanstone.《Balanced Tournament Designs and Related Topics》. Discrete Mathematics, Vol. 77, 1989.
+链接：https://www.sciencedirect.com/science/article/pii/0012365X89903580
+
+学位论文：《The Existence of Balanced Tournament Designs and Partitioned Balanced Tournament Designs》. 滑铁卢大学.
+链接：https://uwspace.uwaterloo.ca/handle/10012/1178
+
+论文：《Balanced tournament designs with almost orthogonal resolutions》. Journal of the Australian Mathematical Society.
+链接：https://www.cambridge.org/core/journals/journal-of-the-australian-mathematical-society/article/balanced-tournament-designs-with-almost-orthogonal-resolutions/4015BAF76A4BD3CC399FF665CF74C87B
+
+备注：BTD 处理的是单一选手池中 2n 人的全对全（all-play-all）赛制，而非本问题中的二部图结构（A队 vs B队）。但其数学方法（拉丁方、可分解设计等）可直接借鉴。
+
+
+2. 循环赛的公平赛程安排（ArXiv 2025）
+------------------------------------------------------------
+
+相关度：中高 —— 涉及主客场（先后手）调度的公平性。
+
+一篇最新论文提出了"排名公平赛程"的概念，证明了当参赛者人数为4的倍数时此类赛程存在。论文指出标准的"圆圈法"（Circle Method）在 n>8 时无法产生排名公平赛程。
+
+论文：Sten Wessel, Cor Hurkens, Frits Spieksma.《Fair Schedules for Single Round Robin Tournaments with Ranked Participants》. arXiv:2502.04159, 2025年2月.
+链接：https://arxiv.org/abs/2502.04159
+PDF：https://arxiv.org/pdf/2502.04159
+
+关键发现：标准的圆圈法（最常用的赛程编排算法）在队伍数超过8时无法产生排名公平赛程。这可能解释了为什么简单的循环构造方法在 n=10 时失败。
+
+
+3. Room方阵与Howell设计
+------------------------------------------------------------
+
+相关度：中 —— 具有配对和符号约束的相关平衡设计。
+
+Room方阵是一个用 n+1 个符号填充的 n×n 阵列，常用于桥牌锦标赛编排。Room方阵仅对奇数 n 存在（n=3,5 除外），因此不直接适用于 n=10。Howell设计 H(s,2n) 是Room方阵的推广，其存在性已完全确定。
+
+维基百科 - Room方阵：
+链接：https://en.wikipedia.org/wiki/Room_square
+
+数学百科全书 - Howell设计：
+链接：https://encyclopediaofmath.org/wiki/Howell_design
+
+论文：《Complete balanced Howell rotations for 8k+5 teams》. Discrete Mathematics.
+链接：https://www.sciencedirect.com/science/article/pii/0012365X82901376
+
+
+4. 拉丁方构造用于赛事编排
+------------------------------------------------------------
+
+相关度：高 —— 本问题的配对结构本质上就是拉丁方。
+
+在本问题中，各轮次中"谁和谁对弈"的安排构成一个拉丁方（每位A队队员与每位B队队员恰好交手一次）。"先后手标记"是在拉丁方基础上的附加约束。使用模运算的构造方法是标准做法。
+
+Cut-the-Knot - 拉丁方的简单构造：
+链接：http://cut-the-knot.org/arithmetic/latin2.shtml
+
+维基百科 - 互相正交拉丁方：
+链接：https://en.wikipedia.org/wiki/Mutually_orthogonal_Latin_squares
+
+核心思路：本问题的配对可用循环移位描述：第 r 轮中，A_i 对阵 B_{(i+s_r) mod n}，其中 s_0, s_1, ..., s_{n-1} 是 {0,1,...,n-1} 的一个排列。难点在于找到一个"签名矩阵" F（n×n 的 0-1 矩阵，行和=列和=m），使其同时满足B队队员的平衡约束。
+
+
+5. 主客场模式编排
+------------------------------------------------------------
+
+相关度：中 —— 处理循环赛中的先后手（主客场）分配问题。
+
+论文：《Scheduling Partial Round Robin Tournaments Subject to Home Away Pattern Sets》. Electronic Journal of Combinatorics.
+链接：https://www.combinatorics.org/ojs/index.php/eljc/article/view/v16i1r55/pdf
+
+论文：《Constructing fair round robin tournaments with a minimum number of breaks》. Operations Research Letters.
+链接：https://www.sciencedirect.com/science/article/abs/pii/S0167637710001124
+
+教程PDF：Pim van 't Hof.《Round Robin Scheduling》.
+链接：https://pimvanthof.github.io/rr.pdf
+
+论文：《The flexibility of home away pattern sets》. Journal of Scheduling, 2022.
+链接：https://link.springer.com/content/pdf/10.1007/s10951-022-00734-w.pdf
+
+
+6. 完全混合双打循环赛（ArXiv）
+------------------------------------------------------------
+
+相关度：中 —— 涉及两组之间具有交叉约束的平衡编排。
+
+论文：D. R. Berman, M. Wakeling.《Complete Mixed Doubles Round Robin Tournaments》. arXiv:1310.5240, 2013.
+链接：https://arxiv.org/abs/1310.5240
+PDF：https://arxiv.org/pdf/1310.5240
+
+
+7. 全对全锦标赛设计（实用赛程）
+------------------------------------------------------------
+
+相关度：低至中 —— 提供了10人参赛时具有左/右平衡优化的实用赛程设计（但为单池全对全，非二部图结构）。
+
+Julian D. A. Wiseman 提供了10名选手的具体赛程设计，包含场地和左右手平衡优化。虽然这是全对全赛制（非两队对抗），但其左右手平衡技术值得参考。
+
+10人赛程设计：
+链接：https://jdawiseman.com/papers/tournaments/all-play-all/apa_10.html
+
+主页说明：
+链接：https://jdawiseman.com/papers/tournaments/all-play-all/all-play-all.html
+
+
+8. 二部图巡回赛问题（ArXiv 2025）
+------------------------------------------------------------
+
+相关度：低 —— 涉及二部图联赛编排，但侧重于旅行距离而非先后手平衡。
+
+论文：《An Improved Algorithm for a Bipartite Traveling Tournament in Interleague Sports Scheduling》. arXiv:2505.06828.
+链接：https://arxiv.org/abs/2505.06828
+
+
+9. 循环赛编排问题的一个变体
+------------------------------------------------------------
+
+相关度：低 —— 不同的变体（每轮重新组队，非固定队伍）。
+
+论文：Chris Busenhart, Norbert Hungerbuehler, William Xu.《A Variant of the Round-Robin Scheduling Problem》. Ars Combinatoria, Volume 158, 2024.
+链接：https://combinatorialpress.com/ars-articles/volume-158/a-variant-of-the-round-robin-scheduling-problem/
+
+
+10. 中文资源：围棋/象棋赛事编排
+------------------------------------------------------------
+
+相关度：中 —— 围棋赛事中关于先后手（黑白棋）平衡的实用编排规则。
+
+101围棋网 - 积分编排制：描述了围棋赛事配对中平衡黑白（先后手）分配的实用原则。
+链接：https://doc.101weiqi.com/room/jifenbianpai/
+
+维基百科 - 循环赛：中文版标准循环赛编排说明。
+链接：https://zh.wikipedia.org/wiki/循环赛
+
+秋雨夜象棋网 - 赛制简介（循环制）：中国象棋循环赛编排惯例，包括"号次在前的队单数台执先、双数台由对方执先"的规则。
+链接：https://blog.sina.com.cn/s/blog_3f19d0c20101f7qw.html
+
+备注：这些资源描述的是实用的赛事编排惯例，并未提供针对本问题四重约束的数学构造方法。
+
+
+============================================================
+
+求解思路总结
+============================================================
+
+基于文献检索，以下是求解 n=10 的最有前景的方法：
+
+1. 整数线性规划（ILP）/ 约束编程（已在 solver_ilp.py 中实现）：
+   将完整问题建模为整数线性规划。使用配对变量 P[r][i][j] 和颜色变量 C[r][i][j] 的一般 ILP 公式是正确的，若解存在则应能找到，但有 O(n^3) 个二元变量。
+
+2. 循环拉丁方 + 平衡签名矩阵：
+   将配对结构固定为循环移位（A_i 对阵 B_{(i+s_r) mod n}），然后搜索一个行和=列和=m 的 {0,1} 签名矩阵 F，使其同时满足B队队员平衡约束。ArXiv 2025 论文的关键发现是：标准循环方法可能对 n=10 无效。
+
+3. 非循环拉丁方构造：
+   考虑非循环配对方式（例如基于有限域构造或其他代数方法），可能更自然地允许平衡签名。
+
+4. 分解方法：
+   将问题视为将完全二部图 K_{10,10} 分解为10个有向完美匹配，其中每个匹配有5条正向边和5条反向边，且每个顶点在所有匹配中的入度和出度均等于5。
+
+============================================================
+
+搜索时间：2026年2月16日
+搜索范围：ArXiv、Google Scholar、MathOverflow、Math StackExchange、ScienceDirect、Springer、Cambridge Core、Wikipedia、中文数学/围棋论坛、组合数学期刊

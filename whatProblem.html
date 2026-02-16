@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Is This Problem? / 这是什么问题？</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 30px;
+            color: #333;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; font-size: 2em; color: #4a00e0; margin-bottom: 5px; }
+        h1.cn { font-size: 1.5em; color: #7c3aed; margin-bottom: 10px; }
+        h2 { color: #7c3aed; margin: 30px 0 15px; padding-bottom: 8px; border-bottom: 3px solid #e9d5ff; }
+        h3 { color: #6d28d9; margin: 20px 0 10px; }
+        p { line-height: 1.8; margin-bottom: 12px; font-size: 1.05em; }
+        .subtitle { text-align: center; color: #6b7280; font-size: 1.1em; margin-bottom: 30px; }
+
+        /* Language toggle */
+        .lang-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+        .lang-btn {
+            padding: 8px 20px;
+            border: 2px solid #7c3aed;
+            border-radius: 25px;
+            background: white;
+            color: #7c3aed;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s;
+        }
+        .lang-btn.active { background: #7c3aed; color: white; }
+        .lang-btn:hover { opacity: 0.85; }
+
+        .en, .cn { display: none; }
+        body.show-en .en { display: block; }
+        body.show-cn .cn { display: block; }
+        body.show-both .en, body.show-both .cn { display: block; }
+        span.en, span.cn { display: none; }
+        body.show-en span.en { display: inline; }
+        body.show-cn span.cn { display: inline; }
+        body.show-both span.en, body.show-both span.cn { display: inline; }
+        .cn { color: #4b5563; font-style: italic; }
+        p.cn, div.cn { border-left: 3px solid #e9d5ff; padding-left: 12px; margin-top: -4px; }
+
+        /* Analogy */
+        .analogy {
+            background: #fef3c7;
+            border-left: 5px solid #f59e0b;
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            margin: 20px 0;
+        }
+        .analogy strong { color: #b45309; }
+
+        /* Teams */
+        .teams-container {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .team { display: flex; flex-direction: column; align-items: center; }
+        .team-label {
+            font-size: 1.3em; font-weight: bold; margin-bottom: 10px;
+            padding: 8px 20px; border-radius: 25px; color: white;
+        }
+        .team-a .team-label { background: #ef4444; }
+        .team-b .team-label { background: #3b82f6; }
+        .players { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        .player {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7em; font-weight: bold; color: white;
+        }
+        .team-a .player { background: #f87171; }
+        .team-b .player { background: #60a5fa; }
+
+        /* Rules grid */
+        .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        @media (max-width: 600px) { .rules-grid { grid-template-columns: 1fr; } }
+        .rule-card { background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 15px; }
+        .rule-card .num {
+            display: inline-block; width: 30px; height: 30px; background: #22c55e;
+            color: white; border-radius: 50%; text-align: center; line-height: 30px;
+            font-weight: bold; margin-right: 8px;
+        }
+        .rule-card p { margin-top: 8px; font-size: 0.95em; }
+
+        /* Match example */
+        .match-example { display: flex; justify-content: center; align-items: center; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
+        .match-box {
+            background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 10px;
+            padding: 10px 16px; text-align: center; font-size: 0.95em;
+        }
+        .match-box .first { color: #dc2626; font-weight: bold; }
+        .match-box .second { color: #2563eb; font-weight: bold; }
+        .match-box .vs { color: #9ca3af; margin: 0 3px; }
+
+        /* Round table */
+        .round-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.85em; }
+        .round-table th { background: #7c3aed; color: white; padding: 8px; }
+        .round-table td { padding: 6px 8px; border: 1px solid #e5e7eb; text-align: center; }
+        .round-table tr:nth-child(even) { background: #f9fafb; }
+        .first-marker { color: #dc2626; font-weight: bold; }
+        .second-marker { color: #2563eb; }
+
+        /* Challenge */
+        .challenge { background: #fef2f2; border: 2px solid #fca5a5; border-radius: 12px; padding: 20px; margin: 25px 0; }
+        .challenge h3 { color: #dc2626; }
+
+        .footer { text-align: center; margin-top: 30px; color: #9ca3af; font-size: 0.9em; }
+    </style>
+</head>
+<body class="show-both">
+<div class="container">
+    <h1>Team Round-Robin Tournament Scheduling</h1>
+    <h1 class="cn">全队循环赛编排问题</h1>
+    <p class="subtitle">
+        <span class="en">A visual guide for anyone who knows basic math</span>
+        <span class="cn"> / 一份面向初中数学水平读者的图文说明</span>
+    </p>
+
+    <div class="lang-toggle">
+        <button class="lang-btn" onclick="setLang('en')">English</button>
+        <button class="lang-btn active" onclick="setLang('both')">Bilingual 双语</button>
+        <button class="lang-btn" onclick="setLang('cn')">中文</button>
+    </div>
+
+    <!-- SECTION 1 -->
+    <h2><span class="en">1. The Setup: Two Teams Face Off</span><span class="cn"> / 1. 背景：两队对决</span></h2>
+    <div class="analogy">
+        <p class="en"><strong>Real-life analogy:</strong> Imagine two chess clubs with 10 players each. Every player from Club A must play exactly one game against every player from Club B. That's 100 games total! We need to organize these games fairly.</p>
+        <p class="cn"><strong>生活类比：</strong>想象两个国际象棋俱乐部各有10名棋手。A队每位棋手必须和B队每位棋手各下一盘棋，总共100盘！我们需要公平地安排这些比赛。</p>
+    </div>
+
+    <div class="teams-container">
+        <div class="team team-a">
+            <div class="team-label"><span class="en">Team A (10 players)</span><span class="cn"> A队（10人）</span></div>
+            <div class="players">
+                <div class="player">A1</div><div class="player">A2</div>
+                <div class="player">A3</div><div class="player">A4</div>
+                <div class="player">A5</div><div class="player">A6</div>
+                <div class="player">A7</div><div class="player">A8</div>
+                <div class="player">A9</div><div class="player">A10</div>
+            </div>
+        </div>
+        <div class="team team-b">
+            <div class="team-label"><span class="en">Team B (10 players)</span><span class="cn"> B队（10人）</span></div>
+            <div class="players">
+                <div class="player">B1</div><div class="player">B2</div>
+                <div class="player">B3</div><div class="player">B4</div>
+                <div class="player">B5</div><div class="player">B6</div>
+                <div class="player">B7</div><div class="player">B8</div>
+                <div class="player">B9</div><div class="player">B10</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <h2><span class="en">2. The Rules</span><span class="cn"> / 2. 规则</span></h2>
+    <p class="en">With n=10 players per team and m=5 (half of 10), we need to satisfy FOUR rules:</p>
+    <p class="cn">每队n=10人，m=5（10的一半），需要同时满足以下四条规则：</p>
+
+    <div class="rules-grid">
+        <div class="rule-card">
+            <span class="num">1</span><strong class="en">Everyone plays everyone</strong><strong class="cn">人人交手</strong>
+            <p class="en">Over 10 rounds, each A-player faces every B-player exactly once. Total = 100 games.</p>
+            <p class="cn">10轮比赛中，A队每位队员和B队每位队员恰好交手一次，共100盘。</p>
+        </div>
+        <div class="rule-card">
+            <span class="num">2</span><strong class="en">One match per round</strong><strong class="cn">每轮一盘</strong>
+            <p class="en">Each player plays exactly one game per round. In each game, one goes first, the other goes second.</p>
+            <p class="cn">每位队员每轮只下一盘棋，对弈双方一个执先（白棋）一个执后（黑棋）。</p>
+        </div>
+        <div class="rule-card">
+            <span class="num">3</span><strong class="en">Balanced per round</strong><strong class="cn">每轮平衡</strong>
+            <p class="en">Each round: exactly 5 A-players go first AND 5 B-players go first. Perfect 50-50 split.</p>
+            <p class="cn">每轮比赛：恰好5名A队员执先，5名B队员执先，完美的50-50分配。</p>
+        </div>
+        <div class="rule-card">
+            <span class="num">4</span><strong class="en">Balanced overall</strong><strong class="cn">总体平衡</strong>
+            <p class="en">After all 10 rounds, every player has gone first exactly 5 times and second exactly 5 times.</p>
+            <p class="cn">10轮全部结束后，每位队员执先恰好5次、执后恰好5次。</p>
+        </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <h2><span class="en">3. What "First" and "Second" Mean</span><span class="cn"> / 3. "执先"与"执后"的含义</span></h2>
+    <p class="en">In each match, the notation shows who goes first (like playing White in chess):</p>
+    <p class="cn">每盘棋中，记号"-"左边的队员执先（类似国际象棋中执白棋）：</p>
+
+    <div class="match-example">
+        <div class="match-box">
+            <span class="first">A1</span><span class="vs">-</span><span class="second">B3</span>
+            <br><small class="en">A1 goes <b>first</b>, B3 goes second</small>
+            <small class="cn">A1<b>执先</b>，B3执后</small>
+        </div>
+        <div class="match-box">
+            <span class="first">B5</span><span class="vs">-</span><span class="second">A7</span>
+            <br><small class="en">B5 goes <b>first</b>, A7 goes second</small>
+            <small class="cn">B5<b>执先</b>，A7执后</small>
+        </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <h2><span class="en">4. A Small Example (n=4, m=2)</span><span class="cn"> / 4. 小例子（n=4，m=2）</span></h2>
+    <p class="en">To make it concrete, here is a tiny example with 4 players per team:</p>
+    <p class="cn">以每队4人为例，更直观地展示：</p>
+
+    <table class="round-table">
+        <tr>
+            <th><span class="en">Round</span><span class="cn">轮次</span></th>
+            <th><span class="en">Match 1</span><span class="cn">第1台</span></th>
+            <th><span class="en">Match 2</span><span class="cn">第2台</span></th>
+            <th><span class="en">Match 3</span><span class="cn">第3台</span></th>
+            <th><span class="en">Match 4</span><span class="cn">第4台</span></th>
+        </tr>
+        <tr><td>1</td>
+            <td><span class="first-marker">A1</span>-B1</td>
+            <td>B2-<span class="second-marker">A2</span></td>
+            <td><span class="first-marker">A3</span>-B3</td>
+            <td>B4-<span class="second-marker">A4</span></td>
+        </tr>
+        <tr><td>2</td>
+            <td>B3-<span class="second-marker">A1</span></td>
+            <td><span class="first-marker">A2</span>-B4</td>
+            <td>B1-<span class="second-marker">A3</span></td>
+            <td><span class="first-marker">A4</span>-B2</td>
+        </tr>
+        <tr><td>3</td>
+            <td><span class="first-marker">A1</span>-B2</td>
+            <td>B1-<span class="second-marker">A2</span></td>
+            <td><span class="first-marker">A3</span>-B4</td>
+            <td>B3-<span class="second-marker">A4</span></td>
+        </tr>
+        <tr><td>4</td>
+            <td>B4-<span class="second-marker">A1</span></td>
+            <td><span class="first-marker">A2</span>-B3</td>
+            <td>B2-<span class="second-marker">A3</span></td>
+            <td><span class="first-marker">A4</span>-B1</td>
+        </tr>
+    </table>
+    <p class="en">Check: A1 goes first in rounds 1, 3 (2 times = m). Goes second in rounds 2, 4 (2 times). Balanced!</p>
+    <p class="cn">验证：A1在第1、3轮执先（共2次=m），在第2、4轮执后（共2次）。平衡！</p>
+
+    <!-- SECTION 5 -->
+    <h2><span class="en">5. Why Is This Hard for n=10?</span><span class="cn"> / 5. 为什么n=10时很困难？</span></h2>
+
+    <div class="challenge">
+        <h3><span class="en">The Challenge</span><span class="cn">难点</span></h3>
+        <p class="en">For n=8 (m=4), there's a simple pattern: use "cyclic shifts" for pairings and alternate first/second by parity. This works because 8 is divisible by 4.</p>
+        <p class="cn">当n=8（m=4）时，有一个简单的规律：用"循环移位"安排对阵，再按奇偶性交替先后手。这之所以可行，是因为8能被4整除。</p>
+        <p class="en">For <b>n=10</b> (m=5), this simple approach <b>fails</b>! Since 10 = 2 mod 4, the parity doesn't balance. We proved mathematically that <b>no cyclic shift pattern can work</b>. We need a cleverer, non-cyclic pairing structure.</p>
+        <p class="cn">但<b>n=10</b>（m=5）时，这个简单方法<b>行不通</b>！因为10除以4余2，奇偶性无法平衡。我们用数学证明了<b>任何循环移位方案都不可行</b>。必须找到更巧妙的非循环对阵结构。</p>
+        <p class="en">Think of it like a Sudoku puzzle: the numbers must satisfy multiple overlapping constraints simultaneously. Finding a schedule that satisfies ALL four rules at once is genuinely difficult!</p>
+        <p class="cn">这就像数独谜题：数字必须同时满足多个重叠的约束条件。找到一个同时满足全部四条规则的编排方案，确实很有挑战性！</p>
+    </div>
+
+    <!-- SECTION 6 -->
+    <h2><span class="en">6. What We Need to Find</span><span class="cn"> / 6. 我们需要找到什么</span></h2>
+    <p class="en">For each of the 10 rounds, we need to decide:</p>
+    <p class="cn">对于每一轮，我们需要确定：</p>
+    <ol style="margin: 10px 0 10px 30px; line-height: 2;">
+        <li><b class="en">Who plays whom?</b><b class="cn">谁和谁对阵？</b> <span class="en">(a matching of all 10 A-players to 10 B-players)</span><span class="cn">（10名A队员与10名B队员的一一配对）</span></li>
+        <li><b class="en">Who goes first?</b><b class="cn">谁执先？</b> <span class="en">(exactly 5 A-players and 5 B-players go first)</span><span class="cn">（恰好5名A队员和5名B队员执先）</span></li>
+    </ol>
+    <p class="en">Such that after all 10 rounds, every player has gone first exactly <b>5 times</b> and every pair has played exactly <b>once</b>.</p>
+    <p class="cn">使得10轮结束后，每位队员恰好执先<b>5次</b>，每对选手恰好交手<b>1次</b>。</p>
+
+    <div class="footer">
+        <p class="en">This is a combinatorial optimization problem from tournament design theory.</p>
+        <p class="cn">这是一个来自锦标赛设计理论的组合优化问题。</p>
+    </div>
+</div>
+
+<script>
+function setLang(lang) {
+    document.body.className = 'show-' + lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
